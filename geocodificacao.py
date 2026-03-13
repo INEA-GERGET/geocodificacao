@@ -3,7 +3,9 @@ import geopy
 import time
 import numpy as np
 
-# 1. Configuração do Geocodificador e Lista Oficial de Municípios do RJ
+nome_arquivo = "SERVMOLA_dados.xlsx"
+
+# 1. Configuração do Geocodificador
 geolocator = geopy.geocoders.ArcGIS(timeout=10)
 
 MUNICIPIOS_RJ = [
@@ -29,14 +31,23 @@ MUNICIPIOS_RJ = [
 ]
 
 def processar_geocodificacao(linha):
-    lat_orig = str(linha.get('Latitude', '')).strip()
-    lon_orig = str(linha.get('Longitude', '')).strip()
+    # --- NOVA VALIDAÇÃO: Pular se coord_origem já existir ---
+    origem_atual = str(linha.get('coord_origem', '')).strip()
+    lat_atual = linha.get('Latitude')
+    lon_atual = linha.get('Longitude')
+    
+    if origem_atual not in ['', 'nan', 'None']:
+        # Se já tem algo escrito em coord_origem, retorna os valores atuais sem mexer
+        return pd.Series([lat_atual, lon_atual, origem_atual])
+    # -------------------------------------------------------
+
+    lat_orig = str(lat_atual).strip() if pd.notna(lat_atual) else ''
+    lon_orig = str(lon_atual).strip() if pd.notna(lon_atual) else ''
     municipio = str(linha.get('Município', '')).strip().upper()
     endereco = str(linha.get('Endereço', '')).strip()
 
-    # Validação de Nulo ou "-"
-    is_lat_empty = pd.isna(linha.get('Latitude')) or lat_orig in ['', '-', 'None', 'nan']
-    is_lon_empty = pd.isna(linha.get('Longitude')) or lon_orig in ['', '-', 'None', 'nan']
+    is_lat_empty = pd.isna(lat_atual) or lat_orig in ['', '-', 'None', 'nan']
+    is_lon_empty = pd.isna(lon_atual) or lon_orig in ['', '-', 'None', 'nan']
 
     if not (is_lat_empty or is_lon_empty):
         return pd.Series([lat_orig, lon_orig, "SERVMOLA"])
@@ -59,27 +70,30 @@ def processar_geocodificacao(linha):
                 return pd.Series([None, None, origem_automatica])
 
 # 3. Execução do Loop de Guias
-todas_guias = pd.read_excel("SERVMOLA_dados.xlsx", sheet_name=None)
+todas_guias = pd.read_excel(nome_arquivo, sheet_name=None)
 meus_dfs = {}
 
 for guia, df in todas_guias.items():
-    # PULA A GUIA "Análise"
     if guia == "Análise":
         print(f"Pulando guia: {guia} (mantendo dados originais)")
         meus_dfs[guia] = df
         continue
         
     print(f"Processando guia: {guia}")
+    
+    # Garantir que a coluna coord_origem exista antes de rodar o apply para evitar erros de busca
+    if 'coord_origem' not in df.columns:
+        df['coord_origem'] = np.nan
+
     df[['Latitude', 'Longitude', 'coord_origem']] = df.apply(processar_geocodificacao, axis=1)
     meus_dfs[guia] = df
     print(f"Guia {guia} concluída.")
 
 # 4. Salvar arquivo final
-nome_arquivo_final = "SERVMOLA_processado.xlsx"
 
-with pd.ExcelWriter(nome_arquivo_final, engine='openpyxl') as writer:
+with pd.ExcelWriter(nome_arquivo, engine='openpyxl') as writer:
     for nome_aba, df_processado in meus_dfs.items():
         df_processado.to_excel(writer, sheet_name=nome_aba, index=False)
         print(f"Aba '{nome_aba}' salva com sucesso.")
 
-print(f"\n✅ Processo concluído! O arquivo '{nome_arquivo_final}' foi gerado.")
+print(f"\n✅ Processo concluído! Arquivo: '{nome_arquivo}'")
