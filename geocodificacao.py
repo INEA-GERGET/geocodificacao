@@ -2,6 +2,9 @@ import pandas as pd
 import geopy
 import time
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore", module="openpyxl")
+
 
 nome_arquivo = "SERVMOLA_dados.xlsx"
 
@@ -75,11 +78,11 @@ meus_dfs = {}
 
 for guia, df in todas_guias.items():
     if guia == "Análise":
-        print(f"Pulando guia: {guia} (mantendo dados originais)")
+        print(f"⏭️  Pulando guia: {guia} (mantendo dados originais)")
         meus_dfs[guia] = df
         continue
         
-    print(f"Processando guia: {guia}")
+    print(f"⏳  Processando guia: {guia}")
     
     # Garantir que a coluna coord_origem exista antes de rodar o apply para evitar erros de busca
     if 'coord_origem' not in df.columns:
@@ -87,7 +90,7 @@ for guia, df in todas_guias.items():
 
     df[['Latitude', 'Longitude', 'coord_origem']] = df.apply(processar_geocodificacao, axis=1)
     meus_dfs[guia] = df
-    print(f"Guia {guia} concluída.")
+    print(f"✅   Guia {guia} concluída.")
 
 # 4. Salvar arquivo final
 
@@ -96,4 +99,4 @@ with pd.ExcelWriter(nome_arquivo, engine='openpyxl') as writer:
         df_processado.to_excel(writer, sheet_name=nome_aba, index=False)
         print(f"Aba '{nome_aba}' salva com sucesso.")
 
-print(f"\n✅ Processo concluído! Arquivo: '{nome_arquivo}'")
+print(f"\n✅  🛰️  Geocodificação concluída! Arquivo: '{nome_arquivo}'")
