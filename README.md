@@ -10,7 +10,7 @@ Este script realiza a geocodificação com base no endereço e município dos da
 
 
 ## Uso
-Em uma pasta coloque a planilha de dados `SERVMOLA_dados.xlsx` e esse script. No seu compilador de preferência, execute o arquivo `geocodificacao.py`, espere um aviso de "Processo concluído!".  
+Em uma pasta coloque a planilha de dados `SERVMOLA_dados.xlsx` e esse script. No seu compilador de preferência, execute o arquivo `geocodificacao.py`, espere um aviso de "✅🛰️  Geocodificação concluída!".  
 
 ## Instalação
 Os arquivos .txt são para serem utilizados dentro do [ArcGIS](https://www.arcgis.com/index.html) e os .py em um compilador Python, como explicado no [mapa mental](#Uso).
